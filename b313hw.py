@@ -54,13 +54,18 @@ class Tag:
                 atrs.append('{0}="{1}"'.format(key,value))
             tag_beg.append(" ".join(atrs))
 
-        html = indent + " ".join(tag_beg) + ">"
+        html = indent + " ".join(tag_beg)
+
+        if self.children or self.text:
+            html += ">"
+        else:
+            html += "/>"
 
         if self.children:
             for child in self.children:
                 html += "\n" + str(child)
             html += "\n" + indent + "</{}>".format(self.tag)
-        else:
+        elif self.text:
             html += self.text + "</{}>".format(self.tag)
 
         return html
