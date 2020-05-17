@@ -72,6 +72,9 @@ class Tag:
 
 class HTML(Tag):
     def __init__(self, output=None):
+        # Если output=None - вывод в консоль
+        # иначе - это имя файла вывода
+        #
         super().__init__("html")
         self.output = output
 
