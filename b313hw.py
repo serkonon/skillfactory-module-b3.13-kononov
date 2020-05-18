@@ -1,22 +1,24 @@
 class Tag:
     def __init__(self, tag, **kwargs):
         self.tag = tag
+        self.classes = ""
+        self.attrs = []
         self.text = ""
-        self.children = []
-        self.attrs = {}
-        self.classes = []
         self.parent = None
+        self.children = []
+        self.is_single = False
 
         # Из параметров парсим классы и атрибуты
         for key, value in kwargs.items():
             if key == "klass":
-                clss = \
-                    str(value).strip("(").strip(")").replace(" ", "").replace("'", "").split(",")
-                for cls in clss:
-                    if cls:
-                        self.classes.append(cls)
+                self.classes = \
+                    str(value).strip("(").strip(")").replace(",", "").\
+                        replace("'", "").replace('"', '')
+            elif key == "is_single":
+                if str(value).lower() == "true":
+                    self.is_single = True
             else:
-                self.attrs[key] = value
+                self.attrs.append('{}="{}"'.format(str(key).replace("_", "-"), value))
 
     def __enter__(self):
         return self
@@ -31,7 +33,7 @@ class Tag:
         return self
 
     def __str__(self):
-        # Найдем уровень вложенности тега
+        # Найдем уровень вложенности тега и определим отступ при печати
         toplvl = {"html", "head", "body"}
         indnt = 0
         Tag = self
@@ -46,20 +48,17 @@ class Tag:
         tag_beg = ["<{}".format(self.tag)]
 
         if self.classes:
-            tag_beg.append('class="' + " ".join(self.classes) + '"')
+            tag_beg.append('class="{}"'.format(self.classes))
 
         if self.attrs:
-            atrs = []
-            for key, value in self.attrs.items():
-                atrs.append('{0}="{1}"'.format(key,value))
-            tag_beg.append(" ".join(atrs))
+            tag_beg.append(" ".join(self.attrs))
 
         html = indent + " ".join(tag_beg)
 
-        if self.children or self.text:
-            html += ">"
+        if (not self.children and not self.text) or self.is_single:
+            html += " />"
         else:
-            html += "/>"
+            html += ">"
 
         if self.children:
             for child in self.children:
@@ -74,7 +73,6 @@ class HTML(Tag):
     def __init__(self, output=None):
         # Если output=None - вывод в консоль
         # иначе - это имя файла вывода
-        #
         super().__init__("html")
         self.output = output
 
@@ -87,8 +85,7 @@ class HTML(Tag):
             print(html)
 
 class TopLevelTag(Tag):
-    def __init__(self, tag):
-        super().__init__(tag)
+    pass
 
 if __name__ == "__main__":
     with HTML(output="test.html") as doc:
@@ -108,7 +105,7 @@ if __name__ == "__main__":
                     paragraph.text = "another test"
                     div += paragraph
 
-                with Tag("img", is_single=True, src="/icon.png") as img:
+                with Tag("img", is_single=True, src="/icon.png", data_image="responsive") as img:
                     div += img
 
                 body += div
